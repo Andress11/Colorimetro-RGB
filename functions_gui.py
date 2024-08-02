@@ -3,6 +3,7 @@ from Color_lib.color_preprocess import Image
 from Color_lib.color_transformation import Color_transformation
 
 import numpy as np
+import cv2 as cv
 import tkinter as tk
 import spectral.io.envi as envi
 from tkinter import filedialog
@@ -10,6 +11,7 @@ from tkinter import filedialog
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 
 class Functions:
 
@@ -20,7 +22,6 @@ class Functions:
         self.plot_parametros = {'plot': 'L',
                                 'cmap': 'viridis'}
 
-
     def search_image(self,master_properties, master_plot):
 
         path_image = tk.filedialog.askopenfilename(filetypes=[("Archivos de imagen", "*.png;*.jpg;*.jpeg")])
@@ -30,32 +31,27 @@ class Functions:
         else: 
             img = Digital_Image(path_image)
             img_properties = img.properties
-            properties = [img_properties.name, img_properties.shape, img_properties.n_rows*img_properties.n_columns]
-            self.LabelGen_Properties(master_properties,properties)
+            properties = [img_properties.name, img.properties.shape]
+            self.LabelGen_Properties(master_properties,properties[1])
             self.plot(master_plot, img_properties.array_data, title = properties[0], colorbar = False)
             self.img = img
-
 
     def clean_frame(self, frame, step):
     
         for widget in frame.winfo_children()[step:]:
             widget.destroy()
 
+    def LabelGen_Properties(self, master, propertie):
 
-    def LabelGen_Properties(self, master, properties):
+        self.clean_frame(master, step = 2)
+        
 
-        self.clean_frame(master, step = 1)
-        Frames = ['Nombre', 'Dimensión']
-
-        for i, frame in enumerate(Frames):
-            text = f'{frame}:  {properties[i]}'
-            Label =  tk.Label(master, text = text, width = 20, justify = 'left').grid( row = i+1, column = 0, padx = (0,5), pady = 5)
+        text = f'Tamaño:  {propertie}'
+        tk.Label(master, text = text, width = 20, justify = 'left').grid( row = 2, column = 0, padx = (0,5), pady = 5)
 
     def set_parametros(self,plot = None,cmap_idx = None):
-
         
         cmaps = ['viridis', 'gray', 'hsv', 'gist_rainbow', 'nipy_spectral']
-
 
         if plot is None:
             self.plot_parametros['cmap'] = cmaps[cmap_idx]
@@ -66,16 +62,18 @@ class Functions:
     def plot(self, master, img_, title: str, colorbar = False,cmap = 'viridis'):
             
             self.clean_frame(master,step = 0)
-            fig = Figure(figsize = (7,6),dpi = 78)
-            
-            ax =  fig.add_subplot(111)
-            im = ax.imshow(img_)
-            ax.set_title(title)
-            ax.axis('off')
             if colorbar is True:
+                fig = Figure(figsize = (8,7),dpi = 78)
+                ax =  fig.add_subplot(111)
                 im = ax.imshow(img_,cmap=cmap)
                 fig.colorbar(im,ax=ax)
-
+            else:
+                fig = Figure(figsize = (7,6),dpi = 78)
+                ax =  fig.add_subplot(111)
+                im = ax.imshow(img_)
+            ax.set_title(title)
+            ax.axis('off')
+            
             canvas = FigureCanvasTkAgg(fig, master = master) 
             canvas.draw()
             tk_widget = canvas.get_tk_widget()
@@ -109,7 +107,6 @@ class Functions:
         bands_names = ['L', 'a', 'b','C','H']
         descriptions = ['Brillo', 'A','B','Croma', 'Tono']
 
-
         if self.color is None or save_parameters == [0,0,0,0,0]:
             print('NO HAY INFORMACIÓN PARA GUARDAR')
             # DISEÑAR PESTAÑA DESPLEGABLE
@@ -119,7 +116,6 @@ class Functions:
             if len(save_path) == 0:
                 return
             else:
-
                 for i in range(len(save_parameters)):
                     
                     write_data[0].append(data[bands_names[i]]) if save_parameters[i] == 1 else None
@@ -154,7 +150,7 @@ class Functions:
         if len(save_path) == 0:
             return
         else:
-            fig = Figure(figsize = (12,8),dpi = 90)
+            fig = Figure(figsize = (12,8),dpi = 300)
             ax =  fig.add_subplot(2,3,1)
             ax.set_title('Imagen')
             ax.imshow(self.img.properties.array_data)
@@ -168,4 +164,36 @@ class Functions:
                 ax.axis('off')
 
             fig.savefig(save_path)
-            #plt.savefig(save_path)
+    
+    def Open_Camera(self,master_properties ,master_plot):
+        
+        cap = cv.VideoCapture(1)
+        cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1024)
+        cap.set(cv.CAP_PROP_FRAME_WIDTH, 1280)
+
+        while True:
+
+            ret, frame = cap.read()
+            frame = cv.flip(frame,1)
+
+            frame_show = cv.resize(frame, (640,480))
+            cv.imshow('c para capturar - q para salir', frame_show)
+
+            if cv.waitKey(1) == 99:
+                self.img = Digital_Image(array = frame)
+                break
+
+            if cv.waitKey(1) == 113:
+                break
+  
+        cap.release()
+        cv.destroyAllWindows()
+
+        if self.img is not None:
+            img_properties = self.img.properties
+            properties = [img_properties.name, img_properties.shape]
+            self.LabelGen_Properties(master_properties,properties[1])
+            self.plot(master_plot, img_properties.array_data, title = properties[0], colorbar = False)
+
+        else:
+            print('IMAGEN NO CAPTURADA')
