@@ -1,5 +1,6 @@
 import cv2 as cv
 import os
+from tkinter import messagebox as mb
 
 
 class Digital_Image:
@@ -9,11 +10,11 @@ class Digital_Image:
         if array is None and path is not None:
             self.properties = self._read_properties(path = path)
 
-        if path is None and array is not None:
+        elif path is None and array is not None:
             self.properties = self._read_properties(array = array)
 
         else:
-            print('ERROR')
+            mb.showerror('Error', 'ERROR DE LECTURA')
 
     def _read_properties(self,path = None, array = None):
         
@@ -27,7 +28,7 @@ class Digital_Image:
         try:
             rows, columns, bands = image_data_rgb.shape
         except ValueError:
-            print('Ruta no valida')
+            mb.showerror('Error', 'RUTA NO VALIDA')
         class P:
             pass
 
