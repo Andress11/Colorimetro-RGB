@@ -7,8 +7,8 @@ import cv2 as cv
 import tkinter as tk
 import spectral.io.envi as envi
 from tkinter import filedialog
+from tkinter import messagebox as mb
 
-import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -26,10 +26,10 @@ class Functions:
 
         path_image = tk.filedialog.askopenfilename(filetypes=[("Archivos de imagen", "*.png;*.jpg;*.jpeg")])
         if len(path_image) == 0:
-            print('SELECIONE UNA IMAGEN')
+            mb.showerror('Error', 'ERROR EN LA SELECCION DE UNA IMAGEN')
             return
         else: 
-            img = Digital_Image(path_image)
+            img = Digital_Image(path = path_image)
             img_properties = img.properties
             properties = [img_properties.name, img.properties.shape]
             self.LabelGen_Properties(master_properties,properties[1])
@@ -82,7 +82,7 @@ class Functions:
     def color_analisis(self, frame_image, with_reference: bool, bg_remover: bool):
 
         if self.img is None:
-            print('PRIMERO SELECIONE UNA IMAGEN')
+            mb.showerror('Error', 'SELECIONE UNA IMAGEN')
         else:
             title = f'Mapa de Color: {self.plot_parametros['plot']}'
             img_normal, white_mean,bg_mask = Image(self.img)._normalize(white_limit = 200, with_reference = with_reference, bg_remover = bg_remover)
@@ -93,7 +93,7 @@ class Functions:
     def update_plot(self,frame_image):
 
         if self.color is None:
-            print('DEBE REALIZAR ANALISIS PRIMERO')
+            mb.showerror('Error', 'DEBE REALIZAR ANALISIS PRIMERO')
             return 
         else:
             title = f'Mapa de Color: {self.plot_parametros['plot']}'
@@ -108,8 +108,7 @@ class Functions:
         descriptions = ['Brillo', 'A','B','Croma', 'Tono']
 
         if self.color is None or save_parameters == [0,0,0,0,0]:
-            print('NO HAY INFORMACIÓN PARA GUARDAR')
-            # DISEÑAR PESTAÑA DESPLEGABLE
+            mb.showerror('Error', 'NO HAY INFORMACION PARA GUARDAR')
         else:
             data = self.color
             save_path = filedialog.asksaveasfilename()
@@ -143,7 +142,7 @@ class Functions:
         bands_names = ['L', 'a', 'b','C','H']
         color = self.color
         if color is None:
-            print('NO HAY DATOS PARA GUARDAR')
+            mb.showerror('Error', 'NO HAY INFORMACION PARA GUARDAR')
             return
             
         save_path = filedialog.asksaveasfilename()
@@ -165,9 +164,9 @@ class Functions:
 
             fig.savefig(save_path)
     
-    def Open_Camera(self,master_properties ,master_plot):
-        
-        cap = cv.VideoCapture(1)
+    def Open_Camera(self,master_properties ,master_plot,cap_select):
+    
+        cap = cv.VideoCapture(int(cap_select))
         cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1024)
         cap.set(cv.CAP_PROP_FRAME_WIDTH, 1280)
 
@@ -196,4 +195,4 @@ class Functions:
             self.plot(master_plot, img_properties.array_data, title = properties[0], colorbar = False)
 
         else:
-            print('IMAGEN NO CAPTURADA')
+            mb.showerror('Error', 'IMAGEN NO CAPTURADA')
